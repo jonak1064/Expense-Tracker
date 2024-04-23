@@ -1,6 +1,11 @@
 import 'dart:async';
 
+import 'package:expense_tracker/models/expense.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:uuid/uuid.dart';
+
+final formatter = DateFormat.yMd();
 
 class NewExpense extends StatefulWidget {
   const NewExpense({super.key});
@@ -14,6 +19,21 @@ class NewExpense extends StatefulWidget {
 class _NewExpenseState extends State<NewExpense> {
   final _titleController = TextEditingController();
   final _amountController = TextEditingController();
+  DateTime? _selectedDate;
+  Category _selectedCategory = Category.leisure;
+
+  void _presentDatePicker() async {
+    final now = DateTime.now();
+    final firstDate = DateTime(now.year - 1, now.month, now.day);
+    final pickedDate = await showDatePicker(
+        context: context,
+        initialDate: now,
+        firstDate: firstDate,
+        lastDate: now);
+    setState(() {
+      _selectedDate = pickedDate;
+    });
+  }
 
   @override
   void dispose() {
@@ -37,21 +57,15 @@ class _NewExpenseState extends State<NewExpense> {
           ),
           Row(
             children: [
-              /*  Expanded(
+              Expanded(
                 child: TextField(
-                  controller: _titleController,
+                  controller: _amountController,
+                  keyboardType: TextInputType.number,
                   maxLength: 50,
                   decoration: const InputDecoration(
-                    label: Text('Title'),
+                    prefixText: '\$ ',
+                    label: Text('Amount'),
                   ),
-                ),
-              ),*/
-              TextField(
-                controller: _titleController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  prefixText: '\$',
-                  label: Text('Amount'),
                 ),
               ),
               const SizedBox(width: 16),
@@ -60,9 +74,11 @@ class _NewExpenseState extends State<NewExpense> {
                   mainAxisAlignment: MainAxisAlignment.end,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    const Text('Select Date'),
+                    Text(_selectedDate == null
+                        ? 'No date selected'
+                        : formatter.format(_selectedDate!)),
                     IconButton(
-                      onPressed: () {},
+                      onPressed: _presentDatePicker,
                       icon: const Icon(
                         Icons.calendar_month,
                       ),
@@ -72,8 +88,30 @@ class _NewExpenseState extends State<NewExpense> {
               )
             ],
           ),
+          const SizedBox(height: 16),
           Row(
             children: [
+              DropdownButton(
+                  value: _selectedCategory,
+                  items: Category.values
+                      .map(
+                        (category) => DropdownMenuItem(
+                          value: category,
+                          child: Text(
+                            category.name.toUpperCase(),
+                          ),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      if (value == null) {
+                        return;
+                      }
+                      _selectedCategory = value;
+                    });
+                  }),
+              const Spacer(),
               TextButton(
                 onPressed: () {
                   Navigator.pop(context);
@@ -85,7 +123,7 @@ class _NewExpenseState extends State<NewExpense> {
                   print(_titleController.text);
                   print(_amountController.text);
                 },
-                child: const Text('save expense'),
+                child: const Text('Save Expense'),
               ),
             ],
           )
